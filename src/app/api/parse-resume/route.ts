@@ -1,10 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
-import formidable, { Files } from 'formidable';
+import formidable from 'formidable';
 import fs from 'fs';
 import pdfParse from 'pdf-parse';
 import { IncomingMessage } from 'http';
 
-// Disable Next.js default body parser
 export const config = {
   api: {
     bodyParser: false,
@@ -18,18 +17,25 @@ interface UploadedFile {
   size?: number;
 }
 
+type FilesType = {
+  resume?: UploadedFile | UploadedFile[];
+};
+
 export async function POST(req: NextRequest) {
   try {
     const form = new formidable.IncomingForm();
 
-    const files: Files = await new Promise((resolve, reject) => {
+    const files: FilesType = await new Promise((resolve, reject) => {
       form.parse(req as unknown as IncomingMessage, (_err, _fields, files) => {
         if (_err) reject(_err);
         else resolve(files);
       });
     });
 
-    const file = (files.resume as UploadedFile)?.filepath;
+    const file = Array.isArray(files.resume)
+      ? files.resume[0]?.filepath
+      : files.resume?.filepath;
+
     if (!file) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 });
     }
