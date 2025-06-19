@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
 
  const files: FilesType = await new Promise((resolve, reject) => {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-form.parse(req as unknown as IncomingMessage, (err: any, _fields, files) => {
+form.parse(req as unknown as IncomingMessage, (err: any, _fields: any, files: any) => {
     if (err) reject(err);
     else resolve(files);
   });
