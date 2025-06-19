@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
-import formidable from 'formidable-serverless';
+import formidable, { Files } from 'formidable';
 import fs from 'fs';
 import pdfParse from 'pdf-parse';
+import { IncomingMessage } from 'http';
 
-// Disable built-in body parsing
+// Disable Next.js default body parser
 export const config = {
   api: {
     bodyParser: false,
@@ -14,14 +15,15 @@ interface UploadedFile {
   filepath: string;
   originalFilename?: string;
   mimetype?: string;
+  size?: number;
 }
 
 export async function POST(req: NextRequest) {
   try {
     const form = new formidable.IncomingForm();
 
-    const files: any = await new Promise((resolve, reject) => {
-      form.parse(req as unknown as any, (_err, _fields, files) => {
+    const files: Files = await new Promise((resolve, reject) => {
+      form.parse(req as unknown as IncomingMessage, (_err, _fields, files) => {
         if (_err) reject(_err);
         else resolve(files);
       });
