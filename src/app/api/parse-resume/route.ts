@@ -26,7 +26,8 @@ export async function POST(req: NextRequest) {
     const form = new formidable.IncomingForm();
 
  const files: FilesType = await new Promise((resolve, reject) => {
-  form.parse(req as unknown as IncomingMessage, (err: any, _fields, files) => {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+form.parse(req as unknown as IncomingMessage, (err: any, _fields, files) => {
     if (err) reject(err);
     else resolve(files);
   });
