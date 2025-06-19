@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import formidable from 'formidable';
 import fs from 'fs';
-import pdfParse from 'pdf-parse';
+// import pdfParse from 'pdf-parse';
 import { IncomingMessage } from 'http';
 
 export const config = {
@@ -23,6 +23,7 @@ type FilesType = {
 
 export async function POST(req: NextRequest) {
   try {
+      const pdfParse = (await import('pdf-parse')).default;
     const form = new formidable.IncomingForm();
 
  const files: FilesType = await new Promise((resolve, reject) => {
