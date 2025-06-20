@@ -20,6 +20,14 @@ export default function HomePage() {
       method: 'POST',
       body: formData,
     })
+    
+    if (!res.ok) {
+      const text = await res.text(); // this will reveal the real HTML error
+      console.error("Non-JSON response:", text);
+      throw new Error(`Server error ${res.status}`);
+       console.log(text);
+    }
+     
 
     const data = await res.json()
     setText(data.text || data.error)
@@ -30,7 +38,7 @@ export default function HomePage() {
     <div className="min-h-screen p-8 bg-gray-100">
       <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow">
         <h1 className="text-2xl font-bold mb-4">Upload Your Resume (PDF)</h1>
-        <form onSubmit={handleUpload} className="space-y-4">
+        <form onSubmit={handleUpload} encType="multipart/form-data" className="space-y-4">
           <input
             type="file"
             name="resume"
