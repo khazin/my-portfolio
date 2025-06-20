@@ -12,7 +12,7 @@ export const config = {
 };
 
 interface UploadedFile {
-  // Change from 'filepath' to 'path' as formidable uses 'path'
+  // Use 'path' because formidable uses this key
   path: string;
   originalFilename?: string;
   mimetype?: string;
@@ -25,8 +25,10 @@ type FilesType = {
 
 function parseForm(req: IncomingMessage): Promise<FilesType> {
   return new Promise((resolve, reject) => {
-    const uploadDir = path.join(process.cwd(), '/public/uploads');
+    const uploadDir = path.join('/tmp', 'uploads');  // Use /tmp for serverless writable space
+
     mkdirSync(uploadDir, { recursive: true });
+    console.log('Upload directory:', uploadDir);
 
     const form = formidable({
       uploadDir,
@@ -54,17 +56,22 @@ export default async function handler(req: any, res: any) {
 
     const uploaded = files.resume;
     const file = Array.isArray(uploaded)
-      ? uploaded[0]?.path   // <-- Use 'path' here instead of 'filepath'
-      : uploaded?.path;     // <-- And here
+      ? uploaded[0]?.path  // Note: use 'path', not 'filepath'
+      : uploaded?.path;
 
     console.log('Received files:', files);
 
     if (!file) {
       return res.status(400).json({ error: 'No file uploaded' });
     }
-    
+
     const dataBuffer = fs.readFileSync(file);
     const parsed = await pdfParse(dataBuffer);
+
+    // Optional: clean up the temp file after processing
+    fs.unlink(file, (err) => {
+      if (err) console.error('Failed to delete temp file:', err);
+    });
 
     return res.status(200).json({ text: parsed.text });
   } catch (err) {
