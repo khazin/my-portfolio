@@ -6,66 +6,80 @@ export default function UploadPage() {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
 
-  const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault()
-    setLoading(true)
+ const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
+  setLoading(true);
 
-    const form = e.currentTarget
-    const formData = new FormData(form)
+  const fileInput = (e.currentTarget.elements.namedItem('resume') as HTMLInputElement);
+  const file = fileInput.files?.[0];
 
-    try {
-      const res = await fetch('/api/parse-resume', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!res.ok) {
-        const errorText = await res.text()
-        console.error('Non-JSON response:', errorText)
-        setText(`Error: ${res.status} - ${errorText}`)
-        return
-      }
-
-      const data = await res.json()
-      setText(data.text || JSON.stringify(data, null, 2))
-    } catch (err) {
-      console.error('Upload failed:', err)
-      setText('Upload failed.')
-    } finally {
-      setLoading(false)
-    }
+  if (!file) {
+    alert('Please select a file');
+    setLoading(false);
+    return;
   }
 
-  return (
-    <div className="min-h-screen p-8 bg-gray-100">
-      <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow">
-        <h1 className="text-2xl font-bold mb-4">Upload Your Resume (PDF)</h1>
-        <form onSubmit={handleUpload} encType="multipart/form-data" className="space-y-4">
-          <input
-            type="file"
-            name="resume"
-            accept=".pdf"
-            required
-            className="block w-full border p-2"
-          />
-          <button
-            type="submit"
-            className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-            disabled={loading}
-          >
-            {loading ? 'Parsing...' : 'Upload & Parse'}
-          </button>
-        </form>
+  const reader = new FileReader();
 
-        {text && (
-          <div className="mt-6">
-            <h2 className="text-lg font-semibold mb-2">Parsed Text:</h2>
-            <pre className="whitespace-pre-wrap bg-gray-100 p-4 rounded text-sm">
-              {text}
-            </pre>
-          </div>
-        )}
-      </div>
+  reader.onload = async () => {
+    if (typeof reader.result !== 'string') {
+      setText('Error: Unable to read file as base64');
+      setLoading(false);
+      return;
+    }
+
+    const base64 = reader.result.split(',')[1]; // remove data:*/*;base64, prefix
+    console.log('Base64 length:', base64.length);
+    console.log('Base64 snippet:', base64.slice(0, 30));
+
+    const payload = JSON.stringify({ file: base64 });
+    console.log('Sending payload:', payload);
+
+    try {
+      const formData = new FormData()
+    formData.append('resume', file)
+      const res = await fetch('/api/parse-resume', {
+         method: 'POST',
+        body: formData
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(errorText);
+      }
+
+      const data = await res.json();
+      setText(data.text || JSON.stringify(data));
+    } catch (err: unknown) {
+      let message = 'Unknown error';
+      if (err instanceof Error) {
+        message = err.message;
+      }
+      setText('Error: ' + message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  reader.readAsDataURL(file);
+};
+
+
+  return (
+    <div>
+      <h1>Upload Your Resume (PDF)</h1>
+      <form onSubmit={handleUpload}>
+        <input type="file" name="resume" accept="multipart/form-data" required />
+        <button type="submit" disabled={loading}>
+          {loading ? 'Parsing...' : 'Upload & Parse'}
+        </button>
+      </form>
+
+      {text && (
+        <pre style={{ whiteSpace: 'pre-wrap', marginTop: '1rem' }}>
+          {text}
+        </pre>
+      )}
     </div>
   )
 }
