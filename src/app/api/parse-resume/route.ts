@@ -1,12 +1,17 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { Buffer } from 'buffer'
+
+export const config = {
+  api: {
+    bodyParser: false, // important! disable built-in parser
+  },
+}
 
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData()
-    const file = formData.get('resume') as File
+    const file = formData.get('resume')
 
-    if (!file) {
+    if (!(file instanceof File)) {
       return NextResponse.json({ error: 'No file uploaded' }, { status: 400 })
     }
 
@@ -46,12 +51,8 @@ export async function POST(req: NextRequest) {
     if (workMatch) result.workExperience = workMatch[1].trim()
 
     return NextResponse.json(result)
-  } catch (error: unknown) {
+  } catch (error) {
     console.error('Error parsing resume:', error)
-    let errorMessage = 'Failed to parse resume'
-    if (error instanceof Error) {
-      errorMessage = error.message
-    }
-    return NextResponse.json({ error: errorMessage }, { status: 500 })
+    return NextResponse.json({ error: 'Failed to parse resume' }, { status: 500 })
   }
 }

@@ -6,63 +6,27 @@ export default function UploadPage() {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
 
- const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault();
-  setLoading(true);
+const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
+  e.preventDefault()
 
-  const fileInput = (e.currentTarget.elements.namedItem('resume') as HTMLInputElement);
-  const file = fileInput.files?.[0];
+  const formData = new FormData(e.currentTarget)
 
-  if (!file) {
-    alert('Please select a file');
-    setLoading(false);
-    return;
+  const res = await fetch('/api/parse-resume', {
+    method: 'POST',
+    body: formData,
+    // do NOT set 'Content-Type' header manually here
+  })
+
+  if (!res.ok) {
+    const errorText = await res.text()
+    console.error('Upload error:', errorText)
+    return
   }
 
-  const reader = new FileReader();
+  const data = await res.json()
+  console.log('Parsed resume:', data)
+}
 
-  reader.onload = async () => {
-    if (typeof reader.result !== 'string') {
-      setText('Error: Unable to read file as base64');
-      setLoading(false);
-      return;
-    }
-
-    const base64 = reader.result.split(',')[1]; // remove data:*/*;base64, prefix
-    console.log('Base64 length:', base64.length);
-    console.log('Base64 snippet:', base64.slice(0, 30));
-
-    const payload = JSON.stringify({ file: base64 });
-    console.log('Sending payload:', payload);
-
-    try {
-      const formData = new FormData()
-    formData.append('resume', file)
-      const res = await fetch('/api/parse-resume', {
-         method: 'POST',
-        body: formData
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        throw new Error(errorText);
-      }
-
-      const data = await res.json();
-      setText(data.text || JSON.stringify(data));
-    } catch (err: unknown) {
-      let message = 'Unknown error';
-      if (err instanceof Error) {
-        message = err.message;
-      }
-      setText('Error: ' + message);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  reader.readAsDataURL(file);
-};
 
 
   return (
