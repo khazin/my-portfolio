@@ -11,40 +11,43 @@ export default function UploadPage() {
     setLoading(true)
 
     const form = e.currentTarget
-    const formData = new FormData(form) // ✅ automatically grabs the `resume` field
+    const formData = new FormData(form)
 
-    const res = await fetch('/api/parse-resume', {
-      method: 'POST',
-      body: formData,
-    })
-
-    let data
     try {
-      data = await res.json()
-      setText(data.text || JSON.stringify(data, null, 2)) // show JSON as fallback
-    } catch (err) {
-      const errText = await res.text()
-      console.error('Non-JSON response:', errText)
-      setText(`Error: ${errText}`)
-    }
+      const res = await fetch('/api/parse-resume', {
+        method: 'POST',
+        body: formData,
+      })
 
-    setLoading(false)
+      if (!res.ok) {
+        const errorText = await res.text()
+        console.error('Non-JSON response:', errorText)
+        setText(`Error: ${res.status} - ${errorText}`)
+        return
+      }
+
+      const data = await res.json()
+      setText(data.text || JSON.stringify(data, null, 2))
+    } catch (err) {
+      console.error('Upload failed:', err)
+      setText('Upload failed.')
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
     <div className="min-h-screen p-8 bg-gray-100">
       <div className="max-w-xl mx-auto bg-white p-6 rounded-lg shadow">
         <h1 className="text-2xl font-bold mb-4">Upload Your Resume (PDF)</h1>
-
         <form onSubmit={handleUpload} encType="multipart/form-data" className="space-y-4">
           <input
             type="file"
-            name="resume" // ✅ MUST match the field expected in backend
+            name="resume"
             accept=".pdf"
             required
             className="block w-full border p-2"
           />
-
           <button
             type="submit"
             className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"

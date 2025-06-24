@@ -1,6 +1,6 @@
 'use client'; // required for useEffect in app router
 
-import Link from 'next/link';
+// import Link from 'next/link';
 import { useEffect } from 'react';
 
 export default function Home() {
