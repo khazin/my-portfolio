@@ -6,34 +6,42 @@ export default function UploadPage() {
   const [text, setText] = useState('')
   const [loading, setLoading] = useState(false)
 
-const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
-  e.preventDefault()
+  const handleUpload = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    setLoading(true)
+    setText('') // clear previous text
 
-  const formData = new FormData(e.currentTarget)
+    const formData = new FormData(e.currentTarget)
 
-  const res = await fetch('/api/parse-resume', {
-    method: 'POST',
-    body: formData,
-    // do NOT set 'Content-Type' header manually here
-  })
+    try {
+      const res = await fetch('/api/parse-resume', {
+        method: 'POST',
+        body: formData,
+      })
 
-  if (!res.ok) {
-    const errorText = await res.text()
-    console.error('Upload error:', errorText)
-    return
+      if (!res.ok) {
+        const errorText = await res.text()
+        throw new Error(errorText)
+      }
+
+      const data = await res.json()
+      setText(JSON.stringify(data, null, 2))
+    } catch (error: unknown) {
+      let errorMessage = 'An unknown error occurred'
+      if (error instanceof Error) {
+        errorMessage = error.message
+      }
+      setText('Error: ' + errorMessage)
+    } finally {
+      setLoading(false)
+    }
   }
-
-  const data = await res.json()
-  console.log('Parsed resume:', data)
-}
-
-
 
   return (
     <div>
       <h1>Upload Your Resume (PDF)</h1>
       <form onSubmit={handleUpload}>
-        <input type="file" name="resume" accept="multipart/form-data" required />
+        <input type="file" name="resume" accept=".pdf" required />
         <button type="submit" disabled={loading}>
           {loading ? 'Parsing...' : 'Upload & Parse'}
         </button>
